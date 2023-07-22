@@ -5,7 +5,19 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 from tqdm import tqdm
+from geopy.geocoders import Nominatim
+geo_local = Nominatim(user_agent='South Korea')
 
+
+# 위도, 경도 반환하는 함수
+def geocoding(address):
+    try:
+        geo = geo_local.geocode(address)
+        x_y = [geo.latitude, geo.longitude]
+        return x_y
+
+    except:
+        return [0,0]
 
 class Cafe:
     def __init__(self, name, address, review, photoUrlList):
@@ -13,6 +25,7 @@ class Cafe:
         self.address = address
         self.review = review
         self.photoUrlList = photoUrlList
+        self.x_y = geocoding(address)
 
     def __str__(self):
         return self.name + "\n" + self.address + "\n" + "\n----------------------------------------------------------------------------------------\n".join(self.review) + "\n" + "\n".join(self.photoUrlList) + "\n===========================================================================\n"
@@ -34,6 +47,8 @@ class Cafe:
             driver.find_element(By.CLASS_NAME, "RestaurantReviewList__MoreReviewButton").click()
 
         review = list(map(lambda x: x.text.replace("\n", " "), driver.find_elements(By.CLASS_NAME, "RestaurantReviewItem__ReviewText")))
+
+
 
         return Cafe(name, address, review, photoUrlList)
     
@@ -80,6 +95,7 @@ for i, cafeId in tqdm(enumerate(idList)):
     time.sleep(1)
 
 # cafeList를 json파일로 저장
+# ensure_ascii=False로 설정하면 한글이 깨지지 않습니다.
 import json
 with open('cafeList.json', 'w', encoding='utf-8') as f:
     json.dump(cafeList, f, ensure_ascii=False, indent=4)
